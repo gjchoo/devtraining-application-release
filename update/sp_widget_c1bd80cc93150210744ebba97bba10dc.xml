@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
+    <sp_widget action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <client_script><![CDATA[api.controller=function(spUtil) {
+  /* widget controller */
+  var c = this;
+	c.filter = '';
+	c.submitting = false;
+	
+	c.submit = function() {
+		
+		if(c.data.newIncident.issue === '' || c.data.newIncident.urgency === "") {
+			spUtil.addErrorMessage("Issue and urgency are required.")
+			return;
+		}
+		
+		c.data.action = "newTicket";
+		c.submitting = true;
+
+		c.server.update().then(function() {
+			c.submitting = false;
+			spUtil.addInfoMessage(c.data.message);
+		});
+	}
+};]]></client_script>
+        <controller_as>c</controller_as>
+        <css/>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list/>
+        <has_preview>false</has_preview>
+        <id>global_objects</id>
+        <internal>false</internal>
+        <link><![CDATA[function link(scope, element, attrs, controller) {  }]]></link>
+        <name>global objects</name>
+        <option_schema/>
+        <public>false</public>
+        <roles/>
+        <script><![CDATA[(function() {
+  /* populate the 'data' object */
+  /* e.g., data.table = $sp.getValue('table'); */
+	
+	data.fields = 'number, short_description, sys_created_on'
+	data.items = getRecentIncidents();
+	data.newIncident = {
+		issue: "",
+		urgency: "",
+	};
+	var portal = $sp.getPortalRecord();
+	data.portalName = portal.getDisplayValue('title');
+	data.parameter = $sp.getParameter('test');
+	
+	if(input && input.action === 'newTicket'){
+		createIncident(input);
+		data.message = "An incident has been created";
+	}
+	
+	function createIncident(inc) {
+		var incidentGR = new GlideRecord('incident');
+		incidentGR.newRecord();
+		incidentGR.setValue('caller_id', gs.getUserID());
+		incidentGR.setValue('short_description', inc.issue);
+		incidentGR.setValue('urgency', inc.urgency);
+		incidentGR.insert();
+	}
+	
+	function getRecentIncidents(){
+		var items = [];
+		var incidentGR = new GlideRecord('incident');
+		
+		incidentGR.setLimit(5);
+		incidentGR.orderByDesc('sys_created_on');
+		incidentGR.query();
+		
+		while(incidentGR.next()) {
+			var obj = {};
+			$sp.getRecordElements(obj, incidentGR, data.fields)
+			items.push(obj);
+		}
+		
+		console.log(items);
+		return items
+	}
+	
+})();]]></script>
+        <servicenow>false</servicenow>
+        <sys_class_name>sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2024-03-27 08:46:02</sys_created_on>
+        <sys_id>c1bd80cc93150210744ebba97bba10dc</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>global objects</sys_name>
+        <sys_package display_value="NeedIt" source="x_58872_needit">6ead8e780f603200cd674f8ce1050ed1</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="NeedIt">6ead8e780f603200cd674f8ce1050ed1</sys_scope>
+        <sys_update_name>sp_widget_c1bd80cc93150210744ebba97bba10dc</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2024-03-27 08:46:50</sys_updated_on>
+        <template><![CDATA[<div class="panel panel-default">
+  <div class="panel-heading">
+    <h4 class="panel-title">
+      {{options.title_1}}
+    </h4>
+  </div>
+
+  <div class="panel-body">
+    <form>
+      <div class="form-gorup">
+        <label for="issue">Issue</label>
+        <input type="text"
+               class="form-control"
+               id="issue"
+               placeholder="Sharepoint is down"
+               ng-model="data.newIncident.issue"
+               />
+      </div>
+
+      <div class="form-group">
+        <label for="urgency">Urgency</label>
+        <select
+               class="form-control"
+               id="urgency"
+                ng-model="data.newIncident.urgency"
+               >
+          <option value="1">High</option>
+          <option value="2">Medium</option>
+          <option value="3">Low</option>
+        </select>
+      </div>
+      <p ng-if="data.newIncident.urgency === '1'">
+        Whoa! Are you serious about it? test test test! If you see this, it works
+      </p>
+    </form>
+  </div>
+
+  <div class="panel-footer">
+    <button class="btn btn-success" ng-disabled="c.submitting" ng-click="c.submit()">
+      Submit
+    </button>
+  </div>
+</div>
+
+<div class="panel panel-default shadow-lg">
+  <div class="panel-heading">
+    <h4 class="panel-title">
+      {{options.title_2}}
+    </h4>
+  </div>
+
+  <div class="panel-body">
+    <div class="form-group">
+       <input type="text"
+               class="form-control"
+               id="filter"
+               placeholder="Search keywords"
+               ng-model="c.filter"
+               />
+    </div>
+
+    <ul class="list-group">
+       <li class="list-group-item" ng-repeat="item in data.items | filter: c.filter">
+       	 <span class="text-muted">
+            <small>{{item.number.display_value}}</small> -
+         		<small>{{item.short_description.display_value}}</small>
+            <small>{{item.sys_created_on.display_value}}</small>
+         </span>
+       </li>
+    </ul>
+
+    <p>
+      {{data.portalName}}
+    </p>
+
+     <p>
+      {{data.parameter}}
+    </p>
+  </div>
+
+
+<div class="accordion" id="accordionExample">
+  <div class="card">
+    <div class="card-header" id="headingOne">
+      <h2 class="mb-0">
+        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+          Collapsible Group Item #1
+        </button>
+      </h2>
+    </div>
+
+    <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
+      <div class="card-body">
+        Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. 3 wolf moon officia aute, non cupidatat skateboard dolor brunch. Food truck quinoa nesciunt laborum eiusmod. Brunch 3 wolf moon tempor, sunt aliqua put a bird on it squid single-origin coffee nulla assumenda shoreditch et. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident. Ad vegan excepteur butcher vice lomo. Leggings occaecat craft beer farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus labore sustainable VHS.
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header" id="headingTwo">
+      <h2 class="mb-0">
+        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+          Collapsible Group Item #2
+        </button>
+      </h2>
+    </div>
+    <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionExample">
+      <div class="card-body">
+        Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. 3 wolf moon officia aute, non cupidatat skateboard dolor brunch. Food truck quinoa nesciunt laborum eiusmod. Brunch 3 wolf moon tempor, sunt aliqua put a bird on it squid single-origin coffee nulla assumenda shoreditch et. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident. Ad vegan excepteur butcher vice lomo. Leggings occaecat craft beer farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus labore sustainable VHS.
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header" id="headingThree">
+      <h2 class="mb-0">
+        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+          Collapsible Group Item #3
+        </button>
+      </h2>
+    </div>
+    <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
+      <div class="card-body">
+        Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. 3 wolf moon officia aute, non cupidatat skateboard dolor brunch. Food truck quinoa nesciunt laborum eiusmod. Brunch 3 wolf moon tempor, sunt aliqua put a bird on it squid single-origin coffee nulla assumenda shoreditch et. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident. Ad vegan excepteur butcher vice lomo. Leggings occaecat craft beer farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus labore sustainable VHS.
+      </div>
+    </div>
+  </div>
+</div>
+
+
+</div>]]></template>
+    </sp_widget>
+</record_update>
